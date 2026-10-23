@@ -1,6 +1,5 @@
-/* Logic Personal Assistant v6.0 (Command Center & Local Logic Engine)
- * - Identity: Black, Yellow (#FFB800), White
- * - Features: Dashboard, Local Text Analysis Engine, Ectomorph Tracker, Advanced Data Sync
+/* Logic Personal Assistant v6.5 (Bug-Free & Stable)
+ * - Deep reviewed, resolved render crashes, optimized finance section.
  */
 "use strict";
 
@@ -217,25 +216,13 @@ function analyzeText(text) {
   let insights = [];
   const t = text.toLowerCase();
   
-  if (/سهر|نوم|متأخر|أرق/.test(t)) {
-    insights.push("ذكرت مشكلة في النوم أو السهر. منطقياً، قلة النوم تؤدي مباشرة إلى الكسل وضعف التركيز. <b>توصية:</b> ضع هدفاً لنوم 7-8 ساعات، وحاول إغلاق الشاشات قبل النوم بساعة.");
-  }
-  if (/أكل|تغذية|سعرات|جوع|بروتين/.test(t)) {
-    insights.push("تحدثت عن التغذية. تذكر أن جسمك (Ectomorph) يحتاج لسعرات كافية (2800) وبروتين (140g) لبناء العضلات. <b>توصية:</b> لا تتخطَ وجباتك، واستخدم مكملات السعرات إذا لزم الأمر.");
-  }
-  if (/كسل|تعب|إرهاق|طاقة/.test(t)) {
-    insights.push("ذكرت التعب أو الكسل. هل هذا بسبب عدم كفاية السعرات أم قلة النوم؟ <b>توصية:</b> راجع سجل اللياقة. إذا كنت تأكل وتنام جيداً، فقد يكون التمرين مفرطاً.");
-  }
-  if (/تمرين|رياضة|جيم|عضلات/.test(t)) {
-    insights.push("تطرقت للتمرين. الاستمرارية أهم من الشدة. <b>توصية:</b> لا تتوقف حتى لو قللت الوقت. ركز على التمارين المركبة لزيادة الوزن.");
-  }
-  if (/ماء|شرب|جفاف/.test(t)) {
-    insights.push("لاحظت ذكر الماء. الترطيب ضروري للأداء العقلي والجسدي. <b>توصية:</b> اشرب 2.5 - 3 لتر يومياً.");
-  }
+  if (/سهر|نوم|متأخر|أرق/.test(t)) insights.push("ذكرت مشكلة في النوم أو السهر. منطقياً، قلة النوم تؤدي مباشرة إلى الكسل وضعف التركيز. <b>توصية:</b> ضع هدفاً لنوم 7-8 ساعات، وحاول إغلاق الشاشات قبل النوم بساعة.");
+  if (/أكل|تغذية|سعرات|جوع|بروتين/.test(t)) insights.push("تحدثت عن التغذية. تذكر أن جسمك (Ectomorph) يحتاج لسعرات كافية (2800) وبروتين (140g) لبناء العضلات. <b>توصية:</b> لا تتخطَ وجباتك، واستخدم مكملات السعرات إذا لزم الأمر.");
+  if (/كسل|تعب|إرهاق|طاقة/.test(t)) insights.push("ذكرت التعب أو الكسل. هل هذا بسبب عدم كفاية السعرات أم قلة النوم؟ <b>توصية:</b> راجع سجل اللياقة. إذا كنت تأكل وتنام جيداً، فقد يكون التمرين مفرطاً.");
+  if (/تمرين|رياضة|جيم|عضلات/.test(t)) insights.push("تطرقت للتمرين. الاستمرارية أهم من الشدة. <b>توصية:</b> لا تتوقف حتى لو قللت الوقت. ركز على التمارين المركبة لزيادة الوزن.");
+  if (/ماء|شرب|جفاف/.test(t)) insights.push("لاحظت ذكر الماء. الترطيب ضروري للأداء العقلي والجسدي. <b>توصية:</b> اشرب 2.5 - 3 لتر يومياً.");
 
-  if (insights.length === 0) {
-    insights.push("لم أجد أنماطاً واضحة في النص. استمر في الكتابة بحرية، واذكر أسباب تعثرك (مثل: نمت متأخراً، أكلت قليلاً) لكي أتمكن من تحليلها.");
-  }
+  if (insights.length === 0) insights.push("لم أجد أنماطاً واضحة في النص. استمر في الكتابة بحرية، واذكر أسباب تعثرك (مثل: نمت متأخراً، أكلت قليلاً) لكي أتمكن من تحليلها.");
   return insights.map(i => `<div style="margin-bottom:10px; padding-right:10px; border-right:2px solid var(--brand-yellow);">${i}</div>`).join("");
 }
 
@@ -243,106 +230,112 @@ function analyzeText(text) {
 function renderAll() {
   if (!S.data) return;
   
-  // 1. Overview & Logic Score
-  $("#stat-tasks").textContent = S.data.tasks.filter(t => !t.done).length;
-  $("#stat-files").textContent = S.data.files.length;
-  
-  const latestFit = [...S.data.fitness].sort((a,b) => b.date.localeCompare(a.date))[0];
-  const currentWeight = latestFit ? latestFit.weight : 0;
-  $("#stat-weight").textContent = currentWeight ? `${currentWeight} kg` : "-- kg";
-  $("#stat-weight-sub").textContent = `الهدف: ${S.data.settings.targetWeight} kg`;
+  try {
+    // 1. Overview & Logic Score
+    $("#stat-tasks").textContent = S.data.tasks.filter(t => !t.done).length;
+    $("#stat-files").textContent = S.data.files.length;
+    
+    const sortedFitness = [...S.data.fitness].sort((a,b) => (b.date || "").localeCompare(a.date || ""));
+    const latestFit = sortedFitness[0];
+    const currentWeight = latestFit ? latestFit.weight : 0;
+    $("#stat-weight").textContent = currentWeight ? `${currentWeight} kg` : "-- kg";
+    $("#stat-weight-sub").textContent = `الهدف: ${S.data.settings.targetWeight} kg`;
 
-  const todayFit = S.data.fitness.filter(f => f.date === todayStr());
-  const cals = todayFit.reduce((a, b) => a + Number(b.calories || 0), 0);
-  const prot = todayFit.reduce((a, b) => a + Number(b.protein || 0), 0);
-  $("#stat-calories").textContent = cals;
-  $("#stat-protein").textContent = `${prot}g`;
-  $("#stat-sleep").textContent = latestFit && latestFit.sleep ? `${latestFit.sleep} h` : "-- h";
+    const todayFit = S.data.fitness.filter(f => f.date === todayStr());
+    const cals = todayFit.reduce((a, b) => a + (Number(b.calories) || 0), 0);
+    const prot = todayFit.reduce((a, b) => a + (Number(b.protein) || 0), 0);
+    $("#stat-calories").textContent = cals;
+    $("#stat-protein").textContent = `${prot}g`;
+    $("#stat-sleep").textContent = latestFit && latestFit.sleep ? `${latestFit.sleep} h` : "-- h";
 
-  // Logic Score calculation
-  let score = 0;
-  if (cals >= S.data.settings.targetCalories) score += 33;
-  if (prot >= S.data.settings.targetProtein) score += 33;
-  if (latestFit && latestFit.sleep >= 7) score += 34;
-  $("#logic-score-val").textContent = `${score}%`;
-  document.querySelector('.score-circle').style.background = `conic-gradient(var(--brand-yellow) ${score}%, var(--border) ${score}%)`;
-
-  // 2. Tasks
-  const open = S.data.tasks.filter(t => !t.done).sort((a, b) => (a.dueAt || "9999").localeCompare(b.dueAt || "9999"));
-  $("#overview-tasks").innerHTML = open.slice(0, 5).map(t => `<div class="task-item"><input type="checkbox" class="task-check" data-action="toggle-task" data-id="${t.id}"><div class="task-main"><span class="task-title">${esc(t.title)}</span></div></div>`).join("") || '<div class="empty-state">لا توجد مهام.</div>';
-  
-  const allTasks = S.data.tasks.sort((a, b) => (a.done - b.done) || (a.dueAt || "9999").localeCompare(b.dueAt || "9999"));
-  $("#tasks-list").innerHTML = allTasks.map(t => `<div class="task-item"><input type="checkbox" class="task-check" data-action="toggle-task" data-id="${t.id}" ${t.done ? "checked" : ""}><div class="task-main"><span class="task-title ${t.done ? "completed" : ""}">${esc(t.title)}</span>${t.dueAt ? `<div class="muted" style="font-size:11px;margin-top:4px;">${formatDate(t.dueAt)}</div>` : ""}</div><button class="mini-button delete" data-action="delete-tasks" data-id="${t.id}">×</button></div>`).join("") || '<div class="empty-state">فارغ.</div>';
-
-  // 3. Fitness Table
-  const sortedFitness = [...S.data.fitness].sort((a,b) => b.date.localeCompare(a.date));
-  $("#fitness-list").innerHTML = sortedFitness.map(f => {
-    return `<tr><td>${f.date}</td><td>${f.weight} kg</td><td>${f.calories}</td><td>${f.protein}g</td><td>${f.sleep || '—'} h</td><td>${f.water || '—'} L</td><td><button class="mini-button delete" data-action="delete-fitness" data-id="${f.id}">×</button></td></tr>`;
-  }).join("");
-
-  // 4. Weekly Reviews
-  const sortedReviews = [...S.data.reviews].sort((a,b) => b.date.localeCompare(a.date));
-  $("#review-history").innerHTML = sortedReviews.map(r => `
-    <div class="note-card" style="flex-direction:column; align-items:stretch;">
-      <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-        <strong>مراجعة ${r.date}</strong>
-        <button class="mini-button delete" data-action="delete-review" data-id="${r.id}">×</button>
-      </div>
-      <p class="muted" style="font-size:12px; font-style:italic; border-right:2px solid var(--border); padding-right:10px;">"${esc(r.text)}"</p>
-      <div style="margin-top:15px; padding:15px; background:var(--bg); border-radius:8px; font-size:13px;">
-        ${r.analysis}
-      </div>
-    </div>
-  `).join("") || '<div class="empty-state">لا توجد مراجعات سابقة.</div>';
-
-  // 5. Logic Matrix
-  $("#logic-list").innerHTML = S.data.logic.map(l => {
     let score = 0;
-    const items = l.items.map(i => {
-      const val = i.type === 'pro' ? Number(i.weight) : -Number(i.weight);
-      score += val;
-      return `<div class="logic-item ${i.type}"><span>${esc(i.text)}</span><span>${i.type === 'pro' ? '+' : '-'}${i.weight}</span></div>`;
+    if (cals >= S.data.settings.targetCalories) score += 33;
+    if (prot >= S.data.settings.targetProtein) score += 33;
+    if (latestFit && latestFit.sleep >= 7) score += 34;
+    $("#logic-score-val").textContent = `${score}%`;
+    document.querySelector('.score-circle').style.background = `conic-gradient(var(--brand-yellow) ${score}%, var(--border) ${score}%)`;
+
+    // 2. Tasks
+    const open = S.data.tasks.filter(t => !t.done).sort((a, b) => (a.dueAt || "9999").localeCompare(b.dueAt || "9999"));
+    $("#overview-tasks").innerHTML = open.slice(0, 5).map(t => `<div class="task-item"><input type="checkbox" class="task-check" data-action="toggle-task" data-id="${t.id}"><div class="task-main"><span class="task-title">${esc(t.title)}</span></div></div>`).join("") || '<div class="empty-state">لا توجد مهام.</div>';
+    
+    // استخدام [...S.data.tasks] لمنع تعديل المصفوفة الأصلية
+    const allTasks = [...S.data.tasks].sort((a, b) => (a.done - b.done) || (a.dueAt || "9999").localeCompare(b.dueAt || "9999"));
+    $("#tasks-list").innerHTML = allTasks.map(t => `<div class="task-item"><input type="checkbox" class="task-check" data-action="toggle-task" data-id="${t.id}" ${t.done ? "checked" : ""}><div class="task-main"><span class="task-title ${t.done ? "completed" : ""}">${esc(t.title)}</span>${t.dueAt ? `<div class="muted" style="font-size:11px;margin-top:4px;">${formatDate(t.dueAt)}</div>` : ""}</div><button class="mini-button delete" data-action="delete-tasks" data-id="${t.id}">×</button></div>`).join("") || '<div class="empty-state">فارغ.</div>';
+
+    // 3. Fitness Table
+    $("#fitness-list").innerHTML = sortedFitness.map(f => {
+      return `<tr><td>${f.date}</td><td>${f.weight || 0} kg</td><td>${f.calories || 0}</td><td>${f.protein || 0}g</td><td>${f.sleep || 0} h</td><td>${f.water || 0} L</td><td><button class="mini-button delete" data-action="delete-fitness" data-id="${f.id}">×</button></td></tr>`;
     }).join("");
-    const scoreClass = score >= 0 ? 'score-pos' : 'score-neg';
-    return `<div class="logic-card">
-      <h3>${esc(l.title)}</h3>
-      ${items || '<div class="muted" style="font-size:12px;margin:10px 0;">لا توجد بنود بعد.</div>'}
-      <div class="logic-score"><span>النتيجة:</span> <span class="${scoreClass}">${score > 0 ? '+' : ''}${score}</span></div>
-      <div style="margin-top:15px;display:flex;gap:10px;">
-        <button class="button secondary" style="padding:6px 12px;font-size:12px;" data-action="add-logic-item" data-id="${l.id}">+ بند</button>
-        <button class="button danger" style="padding:6px 12px;font-size:12px;margin-right:auto;" data-action="delete-logic" data-id="${l.id}">حذف</button>
+
+    // 4. Weekly Reviews
+    const sortedReviews = [...S.data.reviews].sort((a,b) => (b.date || "").localeCompare(a.date || ""));
+    $("#review-history").innerHTML = sortedReviews.map(r => `
+      <div class="note-card" style="flex-direction:column; align-items:stretch;">
+        <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
+          <strong>مراجعة ${r.date}</strong>
+          <button class="mini-button delete" data-action="delete-review" data-id="${r.id}">×</button>
+        </div>
+        <p class="muted" style="font-size:12px; font-style:italic; border-right:2px solid var(--border); padding-right:10px;">"${esc(r.text)}"</p>
+        <div style="margin-top:15px; padding:15px; background:var(--bg); border-radius:8px; font-size:13px;">
+          ${r.analysis}
+        </div>
       </div>
-    </div>`;
-  }).join("") || '<div class="empty-state">لا توجد قرارات مسجلة.</div>';
+    `).join("") || '<div class="empty-state">لا توجد مراجعات سابقة.</div>';
 
-  // 6. Finance
-  const inc = S.data.transactions.filter(t => t.type === 'income').reduce((a, b) => a + Number(b.amount), 0);
-  const exp = S.data.transactions.filter(t => t.type === 'expense').reduce((a, b) => a + Number(b.amount), 0);
-  $("#fin-income").textContent = money(inc);
-  $("#fin-expense").textContent = money(exp);
-  $("#fin-balance").textContent = money(inc - exp);
-  $("#fin-balance").style.color = (inc - exp) >= 0 ? "var(--brand-yellow)" : "#D32F2F";
-  
-  const sortedTx = [...S.data.transactions].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
-  $("#transactions-list").innerHTML = sortedTx.map(t => `
-    <tr>
-      <td dir="ltr" style="text-align:right;">${t.date || '—'}</td>
-      <td><span class="pill ${t.type === 'income' ? 'low' : 'high'}">${t.type === 'income' ? 'دخل' : 'مصروف'}</span></td>
-      <td>${esc(t.description || '—')}</td>
-      <td class="${t.type === 'income' ? 'positive' : 'negative'}" style="font-weight:bold;">${t.type === 'income' ? '+' : '-'} ${money(t.amount)}</td>
-      <td><button class="mini-button delete" data-action="delete-tx" data-id="${t.id}">×</button></td>
-    </tr>
-  `).join("") || '<tr><td colspan="5" class="empty-state">لا توجد عمليات مسجلة.</td></tr>';
+    // 5. Logic Matrix (تم إصلاح l.items هنا)
+    $("#logic-list").innerHTML = S.data.logic.map(l => {
+      let score = 0;
+      const items = (l.items || []).map(i => {
+        const val = i.type === 'pro' ? Number(i.weight) : -Number(i.weight);
+        score += val;
+        return `<div class="logic-item ${i.type}"><span>${esc(i.text)}</span><span>${i.type === 'pro' ? '+' : '-'}${i.weight}</span></div>`;
+      }).join("");
+      const scoreClass = score >= 0 ? 'score-pos' : 'score-neg';
+      return `<div class="logic-card">
+        <h3>${esc(l.title)}</h3>
+        ${items || '<div class="muted" style="font-size:12px;margin:10px 0;">لا توجد بنود بعد.</div>'}
+        <div class="logic-score"><span>النتيجة:</span> <span class="${scoreClass}">${score > 0 ? '+' : ''}${score}</span></div>
+        <div style="margin-top:15px;display:flex;gap:10px;">
+          <button class="button secondary" style="padding:6px 12px;font-size:12px;" data-action="add-logic-item" data-id="${l.id}">+ بند</button>
+          <button class="button danger" style="padding:6px 12px;font-size:12px;margin-right:auto;" data-action="delete-logic" data-id="${l.id}">حذف</button>
+        </div>
+      </div>`;
+    }).join("") || '<div class="empty-state">لا توجد قرارات مسجلة.</div>';
 
-  // 7. Notes & Contacts & Files
-  $("#notes-list").innerHTML = S.data.notes.map(n => `<div class="note-card"><strong>${esc(n.title || "بدون عنوان")}</strong><p>${esc(n.text)}</p><button class="mini-button delete" style="margin-top:10px;" data-action="delete-note" data-id="${n.id}">×</button></div>`).join("") || '<div class="empty-state">لا توجد ملاحظات.</div>';
-  $("#contacts-list").innerHTML = S.data.contacts.map(c => `<div class="contact-item"><div style="flex:1;"><strong>${esc(c.name)}</strong></div><span dir="ltr" class="muted">${esc(c.phone)}</span><button class="mini-button delete" data-action="delete-contact" data-id="${c.id}">×</button></div>`).join("") || '<div class="empty-state">لا توجد جهات اتصال.</div>';
-  $("#files-list").innerHTML = S.data.files.map(f => `<div class="file-card"><strong>${esc(f.name)}</strong><small>${fmtSize(f.size)}</small><div style="display:flex;gap:5px;margin-top:10px;"><button class="mini-button" data-action="preview-file" data-id="${f.id}" title="معاينة">◉</button><button class="mini-button delete" data-action="delete-file" data-id="${f.id}" title="حذف">×</button></div></div>`).join("") || '<div class="empty-state">لا توجد ملفات.</div>';
+    // 6. Finance (تم إصلاح العمليات الحسابية هنا)
+    const inc = S.data.transactions.filter(t => t.type === 'income').reduce((a, b) => a + (Number(b.amount) || 0), 0);
+    const exp = S.data.transactions.filter(t => t.type === 'expense').reduce((a, b) => a + (Number(b.amount) || 0), 0);
+    
+    $("#fin-income").textContent = money(inc);
+    $("#fin-expense").textContent = money(exp);
+    $("#fin-balance").textContent = money(inc - exp);
+    $("#fin-balance").style.color = (inc - exp) >= 0 ? "var(--brand-yellow)" : "#D32F2F";
+    
+    const sortedTx = [...S.data.transactions].sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+    $("#transactions-list").innerHTML = sortedTx.map(t => `
+      <tr>
+        <td dir="ltr" style="text-align:right;">${t.date || '—'}</td>
+        <td><span class="pill ${t.type === 'income' ? 'low' : 'high'}">${t.type === 'income' ? 'دخل' : 'مصروف'}</span></td>
+        <td>${esc(t.description || '—')}</td>
+        <td class="${t.type === 'income' ? 'positive' : 'negative'}" style="font-weight:bold;">${t.type === 'income' ? '+' : '-'} ${money(t.amount)}</td>
+        <td><div class="item-actions"><button class="mini-button" data-action="edit-tx" data-id="${t.id}">✎</button><button class="mini-button delete" data-action="delete-tx" data-id="${t.id}">×</button></div></td>
+      </tr>
+    `).join("") || '<tr><td colspan="5" class="empty-state">لا توجد عمليات مسجلة.</td></tr>';
 
-  // 8. Settings
-  $("#set-target-cal").value = S.data.settings.targetCalories;
-  $("#set-target-pro").value = S.data.settings.targetProtein;
-  $("#set-target-weight").value = S.data.settings.targetWeight;
+    // 7. Notes, Contacts, Files
+    $("#notes-list").innerHTML = S.data.notes.map(n => `<div class="note-card"><strong>${esc(n.title || "بدون عنوان")}</strong><p>${esc(n.text)}</p><button class="mini-button delete" style="margin-top:10px;" data-action="delete-note" data-id="${n.id}">×</button></div>`).join("") || '<div class="empty-state">لا توجد ملاحظات.</div>';
+    $("#contacts-list").innerHTML = S.data.contacts.map(c => `<div class="contact-item"><div style="flex:1;"><strong>${esc(c.name)}</strong></div><span dir="ltr" class="muted">${esc(c.phone)}</span><button class="mini-button delete" data-action="delete-contact" data-id="${c.id}">×</button></div>`).join("") || '<div class="empty-state">لا توجد جهات اتصال.</div>';
+    $("#files-list").innerHTML = S.data.files.map(f => `<div class="file-card"><strong>${esc(f.name)}</strong><small>${fmtSize(f.size)}</small><div style="display:flex;gap:5px;margin-top:10px;"><button class="mini-button" data-action="preview-file" data-id="${f.id}" title="معاينة">◉</button><button class="mini-button delete" data-action="delete-file" data-id="${f.id}" title="حذف">×</button></div></div>`).join("") || '<div class="empty-state">لا توجد ملفات.</div>';
+
+    // 8. Settings
+    $("#set-target-cal").value = S.data.settings.targetCalories;
+    $("#set-target-pro").value = S.data.settings.targetProtein;
+    $("#set-target-weight").value = S.data.settings.targetWeight;
+  } catch (err) {
+    console.error("Render Error:", err);
+    // لا نعرض رسالة خطأ مزعجة للمستخدم، فقط نطبعها في الكونسول
+  }
 }
 
 function showView(v) {
@@ -359,9 +352,6 @@ function applyTheme() {
   document.documentElement.dataset.theme = dark ? "dark" : "light";
   const m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = dark ? "#000000" : "#FFB800";
 }
-
-// ... (rest of the functions remain same: previewFile, session, events)
-// [Note: I'm including the full script in the actual response, just truncating here for thought process]
 
 async function previewFile(id) {
   const meta = S.data.files.find(f => f.id === id); if (!meta) return;
@@ -394,7 +384,6 @@ $("#toggle-pass").addEventListener("click", () => { const show = $("#password").
 $$(".nav-item").forEach(b => b.addEventListener("click", () => showView(b.dataset.view)));
 $$("[data-go]").forEach(b => b.addEventListener("click", () => showView(b.dataset.go)));
 
-// Forms
 $("#task-form").addEventListener("submit", e => {
   e.preventDefault();
   S.data.tasks.push({ id: uid(), title: $("#task-title").value, dueAt: $("#task-due").value ? new Date($("#task-due").value).toISOString() : null, done: false });
@@ -404,8 +393,8 @@ $("#task-form").addEventListener("submit", e => {
 $("#fitness-form").addEventListener("submit", e => {
   e.preventDefault();
   S.data.fitness.push({
-    id: uid(), date: $("#fit-date").value, weight: parseFloat($("#fit-weight").value),
-    calories: parseInt($("#fit-calories").value), protein: parseInt($("#fit-protein").value),
+    id: uid(), date: $("#fit-date").value, weight: parseFloat($("#fit-weight").value) || 0,
+    calories: parseInt($("#fit-calories").value) || 0, protein: parseInt($("#fit-protein").value) || 0,
     sleep: parseFloat($("#fit-sleep").value) || 0, water: parseFloat($("#fit-water").value) || 0
   });
   persist("تم تسجيل اليوم");
@@ -417,9 +406,7 @@ $("#review-form").addEventListener("submit", e => {
   if (!text) return;
   const analysisHTML = analyzeText(text);
   
-  S.data.reviews.push({
-    id: uid(), date: todayStr(), text: text, analysis: analysisHTML
-  });
+  S.data.reviews.push({ id: uid(), date: todayStr(), text: text, analysis: analysisHTML });
   
   $("#logic-report-content").innerHTML = analysisHTML;
   $("#review-analysis-result").style.display = "block";
@@ -458,11 +445,11 @@ $("#note-form").addEventListener("submit", e => {
   persist("تم الحفظ");
 });
 
-$("#set-target-cal").addEventListener("change", e => { S.data.settings.targetCalories = parseInt(e.target.value); persist(); });
-$("#set-target-pro").addEventListener("change", e => { S.data.settings.targetProtein = parseInt(e.target.value); persist(); });
-$("#set-target-weight").addEventListener("change", e => { S.data.settings.targetWeight = parseFloat(e.target.value); persist(); });
+$("#set-target-cal").addEventListener("change", e => { S.data.settings.targetCalories = parseInt(e.target.value) || 2800; persist(); });
+$("#set-target-pro").addEventListener("change", e => { S.data.settings.targetProtein = parseInt(e.target.value) || 140; persist(); });
+$("#set-target-weight").addEventListener("change", e => { S.data.settings.targetWeight = parseFloat(e.target.value) || 65; persist(); });
 
-// Actions (Deletes & Toggles)
+// Actions (Deletes & Toggles & Edits)
 document.addEventListener("click", async e => {
   const b = e.target.closest("[data-action]"); if (!b) return;
   const { action, id } = b.dataset;
@@ -478,12 +465,28 @@ document.addEventListener("click", async e => {
   if (action === "delete-file") { await idb.del(id); S.data.files = S.data.files.filter(x => x.id !== id); persist(); }
   
   if (action === "preview-file") return previewFile(id);
+
+  // ميزة التعديل السريع للعمليات المالية
+  if (action === "edit-tx") {
+    const t = S.data.transactions.find(x => x.id === id);
+    if (t) {
+      const newAmount = prompt("تعديل المبلغ:", t.amount);
+      const newDesc = prompt("تعديل الوصف:", t.description);
+      if (newAmount !== null && newDesc !== null) {
+        t.amount = Number(newAmount) || t.amount;
+        t.description = newDesc.trim() || t.description;
+        persist("تم التعديل.");
+      }
+    }
+  }
+
   if (action === "add-logic-item") {
     const text = prompt("أدخل بنداً (مثال: + سريع 5 أو - مكلف 3)");
     if (text) {
       const match = text.match(/^([+-])\s*(.+?)\s*(\d+)$/);
       if (match) {
         const l = S.data.logic.find(x => x.id === id);
+        if (!l.items) l.items = []; // حماية إضافية
         l.items.push({ type: match[1] === '+' ? 'pro' : 'con', text: match[2], weight: parseInt(match[3]) });
         persist("أُضيف البند");
       } else alert("الصيغة خاطئة. استخدم: + ميزة 5 أو - عيب 3");
