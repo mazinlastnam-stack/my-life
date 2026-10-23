@@ -1,0 +1,292 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#000000">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'">
+  <meta name="referrer" content="no-referrer">
+  <title>Logic | المساعد الشخصي</title>
+  <link rel="stylesheet" href="./style.css">
+  <script src="./app.js" defer></script>
+</head>
+<body>
+  <!-- شاشة الدخول -->
+  <main id="login-screen" class="login-wrap" hidden>
+    <section class="login-card">
+      <div class="brand-logo-large">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7z" fill="currentColor"/>
+          <circle cx="12" cy="9" r="2.5" fill="#FFB800"/>
+        </svg>
+      </div>
+      <p class="eyebrow">LOGIC WORKSPACE</p>
+      <h1 id="auth-title">تسجيل الدخول</h1>
+      <p class="muted" id="auth-sub"></p>
+      <form id="auth-form" autocomplete="on">
+        <div class="field">
+          <label for="username">اسم المستخدم</label>
+          <input id="username" name="username" type="text" autocomplete="username" maxlength="32" required placeholder="اسم المستخدم">
+        </div>
+        <div class="field">
+          <label for="password">كلمة المرور</label>
+          <div class="pass-wrap">
+            <input id="password" name="password" type="password" autocomplete="current-password" required placeholder="كلمة المرور">
+            <button type="button" id="toggle-pass" class="pass-toggle">إظهار</button>
+          </div>
+        </div>
+        <div id="strength-box" hidden>
+          <div class="strength"><i id="strength-bar"></i></div>
+          <small id="strength-text" class="muted">استخدم 8 أحرف على الأقل.</small>
+        </div>
+        <div class="field" id="confirm-field" hidden>
+          <label for="confirm">تأكيد كلمة المرور</label>
+          <input id="confirm" name="confirm" type="password" autocomplete="new-password" placeholder="أعد كتابة كلمة المرور">
+        </div>
+        <button id="auth-submit" class="button primary wide" type="submit">دخول</button>
+        <p id="login-error" class="form-error" role="alert"></p>
+      </form>
+      <div class="auth-links">
+        <button type="button" class="text-button" id="auth-import">استيراد نسخة احتياطية</button>
+        <button type="button" class="text-button" id="forgot-btn">نسيت كلمة المرور؟</button>
+        <input type="file" id="import-input-auth" accept=".json" hidden>
+      </div>
+      <p class="fineprint">البيانات مشفّرة (AES-256) محلياً. لا تغادر جهازك.</p>
+    </section>
+  </main>
+
+  <!-- التطبيق -->
+  <div id="app-screen" class="app-shell" hidden>
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo-small">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 2.38 1.19 4.47 3 5.74V17c0 .55.45 1 1 1h6c.55 0 1-.45 1-1v-2.26c1.81-1.27 3-3.36 3-5.74 0-3.87-3.13-7-7-7z" fill="currentColor"/>
+            <circle cx="12" cy="9" r="2.5" fill="#FFB800"/>
+          </svg>
+        </div>
+        <div><strong>Logic</strong><span id="who">مساحة خاصة</span></div>
+      </div>
+      <nav class="nav" aria-label="التنقل الرئيسي">
+        <button class="nav-item active" data-view="overview">مركز القيادة</button>
+        <button class="nav-item" data-view="fitness">اللياقة (Ectomorph)</button>
+        <button class="nav-item" data-view="weekly-review">المراجعة الأسبوعية</button>
+        <button class="nav-item" data-view="tasks">المهام</button>
+        <button class="nav-item" data-view="logic">المصفوفة المنطقية</button>
+        <button class="nav-item" data-view="notes">الملاحظات</button>
+        <button class="nav-item" data-view="contacts">جهات الاتصال</button>
+        <button class="nav-item" data-view="finance">المالية</button>
+        <button class="nav-item" data-view="files">الملفات</button>
+        <button class="nav-item" data-view="settings">الإعدادات</button>
+      </nav>
+      <div class="sidebar-foot"><span class="status-dot"></span><span>مشفّر</span><button id="logout-button" class="logout-button">خروج</button></div>
+    </aside>
+
+    <main class="main-content">
+      <header class="topbar">
+        <div><h1 id="page-title">مركز القيادة</h1></div>
+        <div class="topbar-right">
+          <input id="global-search" class="search-input top-search" type="search" placeholder="بحث شامل..." autocomplete="off">
+          <button id="theme-button" class="icon-button" title="تبديل المظهر">◐</button>
+          <button id="lock-button" class="icon-button" title="قفل">🔒</button>
+        </div>
+      </header>
+      <div id="global-message" class="global-message" role="status" hidden></div>
+
+      <!-- 1. Command Center (Overview) -->
+      <section class="view active" id="view-overview">
+        <div class="welcome-panel">
+          <div>
+            <p class="eyebrow">SYSTEM STATUS: OPTIMAL</p>
+            <h2 id="welcome-title">مركز القيادة</h2>
+            <p>مراقبة البيانات، تحليل الأنماط، واتخاذ قرارات منطقية.</p>
+          </div>
+        </div>
+        
+        <div class="stats-grid">
+          <article class="stat-card">
+            <div class="stat-head"><span>وزنك الحالي</span></div>
+            <strong id="stat-weight">-- kg</strong>
+            <small id="stat-weight-sub" class="muted">الهدف: 65 kg</small>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head"><span>سعرات اليوم</span></div>
+            <strong id="stat-calories">0</strong>
+            <small class="muted">الهدف: 2800 kcal</small>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head"><span>الالتزام بالبروتين</span></div>
+            <strong id="stat-protein">0g</strong>
+            <small class="muted">الهدف: 140g</small>
+          </article>
+          <article class="stat-card">
+            <div class="stat-head"><span>النوم (أمس)</span></div>
+            <strong id="stat-sleep">-- h</strong>
+            <small class="muted">الهدف: 8 ساعات</small>
+          </article>
+        </div>
+
+        <div class="content-grid">
+          <section class="panel">
+            <div class="panel-heading"><h2>مؤشر التقدم (Logic Score)</h2></div>
+            <div class="logic-score-container">
+              <div class="score-circle">
+                <span id="logic-score-val">0%</span>
+              </div>
+              <p class="muted" style="margin-top:15px; font-size:12px;">يمثل هذا المؤشر التزامك بالعادات الأساسية (التغذية، النوم، التمرين).</p>
+            </div>
+          </section>
+          <section class="panel">
+            <div class="panel-heading"><h2>المهام القادمة</h2><button class="text-button" data-go="tasks">عرض الكل</button></div>
+            <div id="overview-tasks" class="list-stack"></div>
+          </section>
+        </div>
+      </section>
+
+      <!-- 2. Fitness (Ectomorph) -->
+      <section class="view" id="view-fitness">
+        <div class="section-intro"><div><h2>اللياقة والتغذية (Ectomorph)</h2><p>تتبع السعرات، البروتين، النوم، والماء لبناء الكتلة العضلية.</p></div></div>
+        <section class="panel">
+          <form id="fitness-form" class="form-row">
+            <div class="field"><label>التاريخ</label><input id="fit-date" type="date" required></div>
+            <div class="field"><label>الوزن (كجم)</label><input id="fit-weight" type="number" step="0.1" required placeholder="53.0"></div>
+            <div class="field"><label>السعرات (kcal)</label><input id="fit-calories" type="number" required placeholder="2800"></div>
+            <div class="field"><label>البروتين (جم)</label><input id="fit-protein" type="number" required placeholder="140"></div>
+            <div class="field"><label>النوم (ساعات)</label><input id="fit-sleep" type="number" step="0.5" required placeholder="8"></div>
+            <div class="field"><label>الماء (لتر)</label><input id="fit-water" type="number" step="0.1" required placeholder="2.5"></div>
+            <button class="button primary" type="submit">تسجيل اليوم</button>
+          </form>
+        </section>
+        <section class="panel">
+          <div class="panel-heading"><h2>سجل التغذية والنوم</h2></div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>التاريخ</th><th>الوزن</th><th>السعرات</th><th>البروتين</th><th>النوم</th><th>الماء</th><th></th></tr></thead>
+              <tbody id="fitness-list"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+
+      <!-- 3. Weekly Review (Local Logic Engine) -->
+      <section class="view" id="view-weekly-review">
+        <div class="section-intro"><div><h2>المراجعة الأسبوعية والتحليل المنطقي</h2><p>اكتب أفكارك بحرية. سيقوم محرك المنطق المحلي بتحليلها وربطها بأهدافك.</p></div></div>
+        
+        <section class="panel" style="background: var(--surface); border-right: 4px solid var(--brand-yellow);">
+          <form id="review-form" class="stack-form">
+            <div class="field">
+              <label for="review-text">كيف كان أسبوعك؟ (ماذا نجح؟ ماذا تعثر؟ ولماذا؟)</label>
+              <textarea id="review-text" rows="5" required placeholder="مثال: هذا الأسبوع شعرت بالكسل الشديد لأنني سهرت كثيراً ولم أنم جيداً. التمرين كان صعباً بسبب قلة السعرات..."></textarea>
+            </div>
+            <div class="form-actions">
+              <span class="muted">تحليل منطقي محلي 100% (لا يُرسل للإنترنت).</span>
+              <button class="button primary" type="submit">تحليل وحفظ</button>
+            </div>
+          </form>
+        </section>
+
+        <div id="review-analysis-result" class="panel" style="display:none; background: var(--bg); border: 1px dashed var(--brand-yellow);">
+          <h3 style="color: var(--brand-yellow); margin-bottom: 10px;">تقرير المنطق (Logic Engine):</h3>
+          <div id="logic-report-content"></div>
+        </div>
+
+        <section class="panel">
+          <div class="panel-heading"><h2>سجل المراجعات السابقة</h2></div>
+          <div id="review-history" class="list-stack"></div>
+        </section>
+      </section>
+
+      <!-- 4. Tasks -->
+      <section class="view" id="view-tasks">
+        <section class="panel"><form id="task-form" class="form-row">
+          <div class="field grow"><label>المهمة</label><input id="task-title" maxlength="300" required placeholder="ما الذي تريد إنجازه؟"></div>
+          <div class="field"><label>الموعد</label><input id="task-due" type="datetime-local"></div>
+          <button class="button primary" type="submit">إضافة</button>
+        </form></section>
+        <section class="panel"><div id="tasks-list" class="list-stack"></div></section>
+      </section>
+
+      <!-- 5. Logic Matrix -->
+      <section class="view" id="view-logic">
+        <section class="panel">
+          <form id="logic-form" class="form-row">
+            <div class="field grow"><label>عنوان القرار</label><input id="logic-title" required placeholder="مثال: شراء لابتوب جديد"></div>
+            <button class="button primary" type="submit">إنشاء قرار</button>
+          </form>
+        </section>
+        <div id="logic-list" class="logic-grid"></div>
+      </section>
+
+      <!-- 6. Notes -->
+      <section class="view" id="view-notes">
+        <section class="panel"><form id="note-form" class="stack-form"><input id="note-title" placeholder="العنوان"><textarea id="note-text" placeholder="النص..." required></textarea><button class="button primary" type="submit">حفظ</button></form></section>
+        <section class="panel"><div id="notes-list" class="note-grid"></div></section>
+      </section>
+
+      <!-- 7. Contacts -->
+      <section class="view" id="view-contacts">
+        <section class="panel"><form id="contact-form" class="form-row"><div class="field grow"><label>الاسم</label><input id="contact-name" required></div><div class="field"><label>الهاتف</label><input id="contact-phone" dir="ltr"></div><button class="button primary" type="submit">إضافة</button></form></section>
+        <section class="panel"><div id="contacts-list" class="list-stack"></div></section>
+      </section>
+
+      <!-- 8. Finance -->
+      <section class="view" id="view-finance">
+        <div class="stats-grid">
+          <article class="stat-card"><div class="stat-head"><span>إجمالي الدخل</span></div><strong id="fin-income" class="positive">0</strong></article>
+          <article class="stat-card"><div class="stat-head"><span>إجمالي المصروفات</span></div><strong id="fin-expense" class="negative">0</strong></article>
+          <article class="stat-card"><div class="stat-head"><span>الرصيد الصافي</span></div><strong id="fin-balance">0</strong></article>
+        </div>
+        <section class="panel">
+          <form id="transaction-form" class="form-row">
+            <div class="field"><label>النوع</label><select id="transaction-type"><option value="expense">مصروف</option><option value="income">دخل</option></select></div>
+            <div class="field"><label>المبلغ</label><input id="transaction-amount" type="number" step="0.01" required placeholder="0.00"></div>
+            <div class="field grow"><label>الوصف</label><input id="transaction-desc" required placeholder="مثال: طعام"></div>
+            <div class="field"><label>التاريخ</label><input id="transaction-date" type="date" required></div>
+            <button class="button primary" type="submit">تسجيل</button>
+          </form>
+        </section>
+        <section class="panel">
+          <div class="table-wrap">
+            <table><thead><tr><th>التاريخ</th><th>النوع</th><th>الوصف</th><th>المبلغ</th><th></th></tr></thead><tbody id="transactions-list"></tbody></table>
+          </div>
+        </section>
+      </section>
+
+      <!-- 9. Files -->
+      <section class="view" id="view-files">
+        <section class="panel"><form id="file-form" class="upload-box"><input id="file-input" type="file" multiple required><button class="button primary" type="submit">رفع</button></form></section>
+        <section class="panel"><div id="files-list" class="file-grid"></div></section>
+      </section>
+
+      <!-- 10. Settings -->
+      <section class="view" id="view-settings">
+        <section class="panel">
+          <div class="panel-heading"><h2>تخصيص الأهداف</h2></div>
+          <div class="form-row">
+            <div class="field"><label>هدف السعرات</label><input id="set-target-cal" type="number"></div>
+            <div class="field"><label>هدف البروتين</label><input id="set-target-pro" type="number"></div>
+            <div class="field"><label>هدف الوزن (كجم)</label><input id="set-target-weight" type="number" step="0.1"></div>
+          </div>
+        </section>
+        <section class="panel">
+          <div class="panel-heading"><h2>النسخ الاحتياطي والمزامنة</h2></div>
+          <div class="btn-row">
+            <button id="export-backup" class="button primary" type="button">تنزيل نسخة احتياطية</button>
+            <label class="button secondary file-label">استيراد نسخة<input type="file" id="import-input" accept=".json" hidden></label>
+            <button id="connect-file" class="button secondary" type="button">ربط بملف على القرص (مزامنة تلقائية)</button>
+            <button id="lock-now" class="button secondary" type="button">قفل الآن</button>
+            <button id="wipe-button" class="button danger" type="button">حذف الكل</button>
+          </div>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <!-- Dialogs -->
+  <dialog id="preview-dialog">
+    <div class="preview-header"><strong id="preview-name"></strong><div class="preview-tools"><button type="button" class="mini-button" id="preview-download">↓</button><button type="button" class="mini-button" id="preview-close">×</button></div></div>
+    <div id="preview-toolbar" class="preview-toolbar" hidden></div>
+    <div id="preview-body" class="preview-body"></div>
+  </dialog>
+</body>
+            </html>
